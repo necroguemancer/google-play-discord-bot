@@ -33,3 +33,13 @@ pip install Faker
 5. Replace ```'email'``` and ```'password'``` with your Google Play Music account's email and pass.
 6. Go to the bottom of the file and look for ```bot.run("bot-token-here")``` Replace ```bot-token-here``` with the bot token you gain from Discord.
 7. cd into the directory where the bot is and run ```python main.py```
+
+---
+### NOTES: 
+
+* When using this, please make sure everyone in the channel has a Google Play Music subscription. This is just to make sure no one gets in trouble.
+
+* To see the bot's commands do !help
+
+* To get the best results from the ```!play``` command this is the best format: ```!play (Artist Name) - (Song Name)```
+
