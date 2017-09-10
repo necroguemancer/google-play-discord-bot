@@ -39,7 +39,7 @@ pip install Faker
 
 * When using this, please make sure everyone in the channel has a Google Play Music subscription. This is just to make sure no one gets in trouble.
 
-* To see the bot's commands do !help
+* To see the bot's commands do ```!help```
 
 * To get the best results from the ```!play``` command this is the best format: ```!play (Artist Name) - (Song Name)```
 
