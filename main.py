@@ -3,6 +3,7 @@ from discord.ext import commands
 from bs4 import BeautifulSoup
 from utils import *
 from gmusicapi import Mobileclient
+from os import environ
 import urllib.request as request
 
 
@@ -85,7 +86,10 @@ class Music:
 		self.bot = bot
 		self.voice_states = {}
 		self.api = Mobileclient()
-		self.logged_in = self.api.login('email', 'password', '1234567890abcdef')
+		self.logged_in = self.api.login('email',
+                                                'password',
+                                                 environ.get('ANDROID_ID',
+                                                             Mobileclient.FROM_MAC_ADDRESS)
 		self.VOLUME_LEVEL = .1
 
 	def get_permissions(self):
