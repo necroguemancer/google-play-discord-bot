@@ -1,6 +1,7 @@
 import discord, asyncio, aiohttp, os, json
 from music import Music
 from discord.ext import commands
+from permissions import Permissions
 from utils import *
 
 MOTD_TEXT = "2 + 2 is 4. Minus 1 that's 3, quick maffs."
@@ -49,6 +50,8 @@ if __name__ == "__main__":
 	if not discord.opus.is_loaded():
 		discord.opus.load_opus('opus')
 	load_environment()
-	bot.add_cog(Music(bot))
+	permissions = Permissions(os.environ['DEFAULT_ADMIN'])
+	permissions.load_permissions()
+	bot.add_cog(Music(bot, permissions))
 	client.loop.create_task(my_background_task())
 	bot.run(os.environ['DISCORD_BOT_TOKEN']) #NOT MINE

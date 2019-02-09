@@ -3,7 +3,6 @@ from discord.ext import commands
 from gmusicapi import Mobileclient
 from voice_state import VoiceState
 from voice_entry import VoiceEntry
-from permissions import Permissions
 from bs4 import BeautifulSoup
 import urllib.request as request
 
@@ -11,12 +10,12 @@ VOLUME_LEVEL = .1
 
 class Music:
 
-	def __init__(self, bot):
+	def __init__(self, bot, permissions):
 		self.bot = bot
 		self.voice_states = {}
 		self.api = Mobileclient()
 		self.logged_in = self.api.oauth_login(os.environ['HARDWARE_ID'], "{}{}".format(os.environ['CREDENTIALS_FILE_DIR'], os.environ['CREDENTIALS_FILE_NAME']))
-		self.permissions = Permissions(os.environ['DEFAULT_ADMIN'])
+		self.permissions = permissions
 		self.VOLUME_LEVEL = .1
 		if not os.path.exists(os.getcwd() + '/music/'):
 				os.mkdir(os.getcwd() + '/music/')
