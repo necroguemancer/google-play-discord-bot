@@ -1,4 +1,4 @@
-import discord, asyncio, requests, aiohttp, html, json, random, sys, os, glob
+import discord, asyncio, requests, aiohttp, html, json, random, sys, os, glob, traceback
 from discord.ext import commands
 from gmusicapi import Mobileclient
 from voice_state import VoiceState
@@ -52,12 +52,13 @@ class Music:
 		found_songs = []
 		for index in range(0, max_results):
 			track = results.get('song_hits', [])[index].get('track', '')
+			print(json.dumps(track, indent=4))
 			found_songs.append({
 				"track": track,
 				"song_id": track.get('storeId', ''),
 				"artist": track.get('artist', ''),
 				"title": track.get('title', ''),
-				"album_art": track.get('albumArtRef', [])[index].get('url', ''),
+				"album_art": track.get('albumArtRef', [])[0].get('url', ''),
 				"url": self.api.get_stream_url(track.get('storeId', ''))
 			})
 		return found_songs
@@ -74,14 +75,14 @@ class Music:
 		song_data_list = []
 		player_list = []
 		for song in song_info_list:
-			artist = song_info_list[0].get('artist')
-			title = song_info_list[0].get('title')
-			await self.song_download(artist, title, song_info_list[0].get('url'))
+			artist = song.get('artist')
+			title = song.get('title')
+			await self.song_download(artist, title, song.get('url'))
 			player_list.append(state.voice.create_ffmpeg_player("./music/{}_{}.mp3".format(artist, title), after=state.toggle_next))
 			song_data_list.append({
 				"title": title,
 				"artist": artist,
-				"album_art": song_info_list[0].get('album_art')
+				"album_art": song.get('album_art')
 			})
 		return player_list, song_data_list
 
@@ -160,24 +161,14 @@ class Music:
 				return
 
 		try:
-			track_url, title, artist, album_art = self.song_search(song)
-			await self.song_download(artist, title, track_url)
-			player = state.voice.create_ffmpeg_player("./music/{}_{}.mp3".format(artist, title), after=state.toggle_next)
-			data = {
-				"title": title,
-				"artist": artist,
-				"album_art": album_art
-			}
+			song_info_list = self.song_search(song, max_results=10)
+			players, data_list = await self.prep_ffmpeg(state, song_info_list)
 		except Exception as e:
+			traceback.print_exc()
 			fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
 			await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
 		else:
-			player.volume = self.VOLUME_LEVEL
-			entry = VoiceEntry(ctx.message, player, data)
-			em = discord.Embed(title=data["artist"], description=data["title"], colour=0xDEADBF)
-			em.set_author(name="Queued", icon_url=data["album_art"])
-			await self.bot.say("Beamin' up the music.", embed=em)
-			await state.songs.put(entry)
+			await self.beam_music(ctx, state, players, data_list)
 
 	@commands.command(pass_context=True, no_pm=True)
 	async def volume(self, ctx, value : int):
