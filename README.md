@@ -43,3 +43,13 @@ pip install Faker
 
 * To get the best results from the ```!play``` command this is the best format: ```!play (Artist Name) - (Song Name)```
 
+### TODOS:
+
+* [ ] Create makefile for fast bootstrapping
+* [ ] Terraform for rapid AWS deployment
+* [ ] Working permissions system with command integration
+* [ ] Make sure it cleans up after itself when streaming music
+* [ ] Pray that unittesting is in good shape and fix what isn't
+* [ ] Make it not look like a comment bomb hit it
+* [ ] Fully updated README
+* [ ] Better searching?
