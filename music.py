@@ -86,6 +86,15 @@ class Music:
 			})
 		return player_list, song_data_list
 
+	async def beam_music(self, ctx, state, players, data_list):
+		for index in range(0, len(players)):
+			players[index].volume = self.VOLUME_LEVEL
+			entry = VoiceEntry(ctx.message, players[index], data_list[index])
+			em = discord.Embed(title=data_list[index].get("artist"), description=data_list[index].get("title"), colour=0xDEADBF)
+			em.set_author(name="Queued", icon_url=data_list[index].get("album_art"))
+			await self.bot.say("Beamin' up the music.", embed=em)
+			await state.songs.put(entry)
+
 	@commands.command(pass_context=True, no_pm=True)
 	async def join(self, ctx, *, channel : discord.Channel):
 		try:
@@ -136,12 +145,7 @@ class Music:
 			fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
 			await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
 		else:
-			players[0].volume = self.VOLUME_LEVEL
-			entry = VoiceEntry(ctx.message, players[0], data_list[0])
-			em = discord.Embed(title=data_list[0].get("artist"), description=data_list[0].get("title"), colour=0xDEADBF)
-			em.set_author(name="Queued", icon_url=data_list[0].get("album_art"))
-			await self.bot.say("Beamin' up the music.", embed=em)
-			await state.songs.put(entry)
+			await self.beam_music(ctx, state, players, data_list)
 
 	@commands.command(pass_context=True, no_pm=True)
 	async def playlist(self, ctx, *, song : str):

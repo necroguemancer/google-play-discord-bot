@@ -18,7 +18,6 @@ class Permissions:
         if self._permissions is None or len(self._permissions.keys()) == 0:
             with open(self.permissions_file_location, 'r') as perms:
                 self._permissions = json.loads(perms.read())
-                print(json.dumps(self._permissions, indent=4))
         else:
             return self._permissions
 
@@ -27,7 +26,6 @@ class Permissions:
             perms.write(json.dumps(self.permissions, indent=4))
 
     def check_permission(self, perm, user):
-        print(json.dumps(self.permissions, indent=4))
         return user in self.permissions.get(perm, [])
 
     def grant_permission(self, perm, granting_user, requesting_user):

@@ -43,7 +43,6 @@ def load_environment(environment_path='environment.json'):
 		env = json.loads(environment.read())
 		for key, value in env.items():
 			os.environ[key] = value
-			print(os.environ[key])
 
 
 if __name__ == "__main__":
