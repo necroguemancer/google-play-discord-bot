@@ -14,7 +14,7 @@ class Music:
 		self.bot = bot
 		self.voice_states = {}
 		self.api = Mobileclient()
-		self.logged_in = self.api.oauth_login(os.environ['HARDWARE_ID'], 'other_creds.json')
+		self.logged_in = self.api.oauth_login(os.environ['HARDWARE_ID'], "{}{}".format(os.environ['CREDENTIALS_FILE_DIR'], os.environ['CREDENTIALS_FILE_NAME']))
 		self.VOLUME_LEVEL = .1
 
 	def get_permissions(self):
