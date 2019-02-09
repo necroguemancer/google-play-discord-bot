@@ -17,3 +17,9 @@ run:
 
 test:
 	echo "Whoops, I'll fix this soon."
+
+purge-music:
+	rm -rf ./music/*.mp3
+
+purge-permissions:
+	rm -rf ./permissions.json
