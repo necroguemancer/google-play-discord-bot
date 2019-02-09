@@ -47,29 +47,33 @@ class Music:
 			except:
 				pass
 
-	def song_search(self, song, max_results=1):
+	def song_search(self, song, max_results=2):
 		results = self.api.search(song, max_results=max_results)
+		print("Results from api: " + json.dumps(results, indent=4))
 		found_songs = []
 		for index in range(0, max_results):
 			track = results.get('song_hits', [])[index].get('track', '')
-			print(json.dumps(track, indent=4))
 			found_songs.append({
 				"track": track,
 				"song_id": track.get('storeId', ''),
 				"artist": track.get('artist', ''),
 				"title": track.get('title', ''),
 				"album_art": track.get('albumArtRef', [])[0].get('url', ''),
-				"url": self.api.get_stream_url(track.get('storeId', ''))
+				"url": self.api.get_stream_url(track.get('storeId', '')),
+				"explicit_type": track.get('explicitType', "1")
 			})
+		found_songs = list(filter(lambda x: x.get('explicit_type') is "1", found_songs))
+		if max_results is 2 and len(found_songs) is 2:
+			del found_songs[1]
 		return found_songs
 
 	async def song_download(self, artist, title, track_url):
 		track_raw = request.urlopen(track_url)
 		if "./music/{}_{}.mp3".format(artist, title) not in glob.glob("./music/*.mp3"):
-				await self.bot.say("Downloading {}'s {}.mp3".format(artist, title))
-				with open("./music/{}_{}.mp3".format(artist, title), "wb") as track_file:
-					track_file.write(track_raw.read())
-					track_file.close()
+			await self.bot.say("Downloading {}'s {}.mp3".format(artist, title))
+			with open("./music/{}_{}.mp3".format(artist, title), "wb") as track_file:
+				track_file.write(track_raw.read())
+				track_file.close()
 
 	async def prep_ffmpeg(self, state, song_info_list):
 		song_data_list = []
