@@ -1,4 +1,4 @@
-import discord, asyncio, requests, aiohttp, html, json, random, sys, os
+import discord, asyncio, requests, aiohttp, html, json, random, sys, os, glob
 from discord.ext import commands
 from gmusicapi import Mobileclient
 from voice_state import VoiceState
@@ -18,6 +18,8 @@ class Music:
 		self.logged_in = self.api.oauth_login(os.environ['HARDWARE_ID'], "{}{}".format(os.environ['CREDENTIALS_FILE_DIR'], os.environ['CREDENTIALS_FILE_NAME']))
 		self.permissions = Permissions(os.environ['DEFAULT_ADMIN'])
 		self.VOLUME_LEVEL = .1
+		if not os.path.exists(os.getcwd() + '/music/'):
+				os.mkdir(os.getcwd() + '/music/')
 
 	def get_voice_state(self, server):
 		state = self.voice_states.get(server.id)
@@ -46,6 +48,40 @@ class Music:
 			except:
 				pass
 
+	def song_search(self, song, max_results=1):
+		results = self.api.search(song, max_results=max_results)
+		# with open("output.txt", "wb") as f:
+		# 	f.write(str(results["song_hits"]).encode(sys.stdout.encoding, errors='replace'))
+		found_songs = []
+		for index in range(0, max_results):
+			track = results.get('song_hits', [])[index].get('track', '')
+			found_songs.append({
+				"track": track,
+				"song_id": track.get('storeId', ''),
+				"artist": track.get('artist', ''),
+				"title": track.get('title', ''),
+				"album_art": track.get('albumArtRef', [])[index].get('url', ''),
+				"url": self.api.get_stream_url(track.get('storeId', ''))
+			})
+
+		print(json.dumps(found_songs[0], indent=4))
+		# track = results['song_hits'][0]['track']
+		# song_id = track['storeId']
+		# artist = track['artist']
+		# title = track['title']
+		# album_art = track['albumArtRef'][0]['url']
+		# url = self.api.get_stream_url(song_id)
+		# return url, title, artist, album_art
+		return found_songs
+
+	async def song_download(self, artist, title, track_url):
+		track_raw = request.urlopen(track_url)
+		if "./music/{}_{}.mp3".format(artist, title) not in glob.glob("./music/*.mp3"):
+				await self.bot.say("Downloading {}'s {}.mp3".format(artist, title))
+				with open("./music/{}_{}.mp3".format(artist, title), "wb") as track_file:
+					track_file.write(track_raw.read())
+					track_file.close()
+
 	@commands.command(pass_context=True, no_pm=True)
 	async def join(self, ctx, *, channel : discord.Channel):
 		try:
@@ -62,7 +98,6 @@ class Music:
 		if not self.check(ctx): 
 			await self.bot.say("You don't have access to that command.")
 			return
-		"""Summons the bot to join your voice channel."""
 
 		summoned_channel = ctx.message.author.voice_channel
 		if summoned_channel is None:
@@ -79,16 +114,6 @@ class Music:
 
 	@commands.command(pass_context=True, no_pm=True)
 	async def play(self, ctx, *, song : str):
-		# if not self.check(ctx): 
-		# 	await self.bot.say("You don't have access to that command.")
-		# 	return
-		"""Plays a song.
-		If there is a song currently in the queue, then it is
-		queued until the next song is done playing.
-		This command automatically searches as well from YouTube.
-		The list of supported sites can be found here:
-		https://rg3.github.io/youtube-dl/supportedsites.html
-		"""
 		state = self.get_voice_state(ctx.message.server)
 		opts = {
 			'default_search': 'auto',
@@ -100,54 +125,58 @@ class Music:
 			if not success:
 				return
 
-		def s():
-			results = self.api.search(song, max_results=1)
-			with open("output.txt", "wb") as f:
-				f.write(str(results["song_hits"]).encode(sys.stdout.encoding, errors='replace'))
-			track = results['song_hits'][0]['track']
-			song_id = track['storeId']
-			artist = track['artist']
-			# album = track['album']
-			title = track['title']
-			# track_nr = track['trackNumber']
-			# year = track['year']
-			# genre = track['genre']
-			# album_artist = track['albumArtist']
-			album_art = track['albumArtRef'][0]['url']
-			url = self.api.get_stream_url(song_id)
-			# print(track, song_id, artist, album, title, track_nr, year, genre, album_artist)
-			return url, title, artist, album_art
-
 		try:
-			track_url, title, artist, album_art = s()
-			track_raw = request.urlopen(track_url)
-			import glob
-			print(os.getcwd() + '/music/')
-			if not os.path.exists(os.getcwd() + '/music/'):
-				os.mkdir(os.getcwd() + '/music/')
-			if "./music/{}_{}.mp3".format(artist, title) not in glob.glob("./music/*.mp3"):
-				await self.bot.say("Downloading {}'s {}.mp3".format(artist, title))
-				with open("./music/{}_{}.mp3".format(artist, title), "wb") as track_file:
-					track_file.write(track_raw.read())
-					track_file.close()
-
-			# player = state.voice.create_stream_player(track_raw, after=state.toggle_next)
+			print("Song: " + song)
+			song_info_list = self.song_search(song)
+			artist = song_info_list[0].get('artist')
+			title = song_info_list[0].get('title')
+			await self.song_download(artist, title, song_info_list[0].get('url'))
 			player = state.voice.create_ffmpeg_player("./music/{}_{}.mp3".format(artist, title), after=state.toggle_next)
 			data = {
 				"title": title,
 				"artist": artist,
-				"album_art": album_art
+				"album_art": song_info_list[0].get('album_art')
 			}
-			print("Data from track: %s" % data["artist"])
-			# await state.voice.play_audio(open("temp.mp3", "rb"))
-			# raise Exception("Not really an error")
 		except Exception as e:
 			fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
 			await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
 		else:
 			player.volume = self.VOLUME_LEVEL
 			entry = VoiceEntry(ctx.message, player, data)
-			# await self.bot.say('Enqueued ' + str(entry))
+			em = discord.Embed(title=data["artist"], description=data["title"], colour=0xDEADBF)
+			em.set_author(name="Queued", icon_url=data["album_art"])
+			await self.bot.say("Beamin' up the music.", embed=em)
+			await state.songs.put(entry)
+
+	@commands.command(pass_context=True, no_pm=True)
+	async def playlist(self, ctx, *, song : str):
+		state = self.get_voice_state(ctx.message.server)
+		opts = {
+			'default_search': 'auto',
+			'quiet': True,
+		}
+
+		if state.voice is None:
+			success = await ctx.invoke(self.summon)
+			if not success:
+				return
+
+
+		try:
+			track_url, title, artist, album_art = self.song_search(song)
+			await self.song_download(artist, title, track_url)
+			player = state.voice.create_ffmpeg_player("./music/{}_{}.mp3".format(artist, title), after=state.toggle_next)
+			data = {
+				"title": title,
+				"artist": artist,
+				"album_art": album_art
+			}
+		except Exception as e:
+			fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
+			await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
+		else:
+			player.volume = self.VOLUME_LEVEL
+			entry = VoiceEntry(ctx.message, player, data)
 			em = discord.Embed(title=data["artist"], description=data["title"], colour=0xDEADBF)
 			em.set_author(name="Queued", icon_url=data["album_art"])
 			await self.bot.say("Beamin' up the music.", embed=em)
@@ -230,7 +259,7 @@ class Music:
 		num_members = len(ctx.message.server.members)
 
 		voter = ctx.message.author
-		if voter == state.current.requester:
+		if voter == state.current.requester or self.permissions.check_permission(self.permissions.admin_perm, ctx.message.author.id):
 			await self.bot.say('Requester requested skipping song...')
 			state.skip()
 		elif voter.id not in state.skip_votes:
