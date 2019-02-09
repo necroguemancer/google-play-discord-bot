@@ -71,6 +71,21 @@ class Music:
 					track_file.write(track_raw.read())
 					track_file.close()
 
+	async def prep_ffmpeg(self, state, song_info_list):
+		song_data_list = []
+		player_list = []
+		for song in song_info_list:
+			artist = song_info_list[0].get('artist')
+			title = song_info_list[0].get('title')
+			await self.song_download(artist, title, song_info_list[0].get('url'))
+			player_list.append(state.voice.create_ffmpeg_player("./music/{}_{}.mp3".format(artist, title), after=state.toggle_next))
+			song_data_list.append({
+				"title": title,
+				"artist": artist,
+				"album_art": song_info_list[0].get('album_art')
+			})
+		return player_list, song_data_list
+
 	@commands.command(pass_context=True, no_pm=True)
 	async def join(self, ctx, *, channel : discord.Channel):
 		try:
@@ -115,25 +130,16 @@ class Music:
 				return
 
 		try:
-			print("Song: " + song)
 			song_info_list = self.song_search(song)
-			artist = song_info_list[0].get('artist')
-			title = song_info_list[0].get('title')
-			await self.song_download(artist, title, song_info_list[0].get('url'))
-			player = state.voice.create_ffmpeg_player("./music/{}_{}.mp3".format(artist, title), after=state.toggle_next)
-			data = {
-				"title": title,
-				"artist": artist,
-				"album_art": song_info_list[0].get('album_art')
-			}
+			players, data_list = await self.prep_ffmpeg(state, song_info_list)
 		except Exception as e:
 			fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
 			await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
 		else:
-			player.volume = self.VOLUME_LEVEL
-			entry = VoiceEntry(ctx.message, player, data)
-			em = discord.Embed(title=data["artist"], description=data["title"], colour=0xDEADBF)
-			em.set_author(name="Queued", icon_url=data["album_art"])
+			players[0].volume = self.VOLUME_LEVEL
+			entry = VoiceEntry(ctx.message, players[0], data_list[0])
+			em = discord.Embed(title=data_list[0].get("artist"), description=data_list[0].get("title"), colour=0xDEADBF)
+			em.set_author(name="Queued", icon_url=data_list[0].get("album_art"))
 			await self.bot.say("Beamin' up the music.", embed=em)
 			await state.songs.put(entry)
 
@@ -149,7 +155,6 @@ class Music:
 			success = await ctx.invoke(self.summon)
 			if not success:
 				return
-
 
 		try:
 			track_url, title, artist, album_art = self.song_search(song)
