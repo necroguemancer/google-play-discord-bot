@@ -122,6 +122,9 @@ class Music:
 			track_url, title, artist, album_art = s()
 			track_raw = request.urlopen(track_url)
 			import glob
+			print(os.getcwd() + '/music/')
+			if not os.path.exists(os.getcwd() + '/music/'):
+				os.mkdir(os.getcwd() + '/music/')
 			if "./music/{}_{}.mp3".format(artist, title) not in glob.glob("./music/*.mp3"):
 				await self.bot.say("Downloading {}'s {}.mp3".format(artist, title))
 				with open("./music/{}_{}.mp3".format(artist, title), "wb") as track_file:
