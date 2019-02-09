@@ -50,8 +50,6 @@ class Music:
 
 	def song_search(self, song, max_results=1):
 		results = self.api.search(song, max_results=max_results)
-		# with open("output.txt", "wb") as f:
-		# 	f.write(str(results["song_hits"]).encode(sys.stdout.encoding, errors='replace'))
 		found_songs = []
 		for index in range(0, max_results):
 			track = results.get('song_hits', [])[index].get('track', '')
@@ -63,15 +61,6 @@ class Music:
 				"album_art": track.get('albumArtRef', [])[index].get('url', ''),
 				"url": self.api.get_stream_url(track.get('storeId', ''))
 			})
-
-		print(json.dumps(found_songs[0], indent=4))
-		# track = results['song_hits'][0]['track']
-		# song_id = track['storeId']
-		# artist = track['artist']
-		# title = track['title']
-		# album_art = track['albumArtRef'][0]['url']
-		# url = self.api.get_stream_url(song_id)
-		# return url, title, artist, album_art
 		return found_songs
 
 	async def song_download(self, artist, title, track_url):
