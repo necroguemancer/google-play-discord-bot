@@ -1,14 +1,10 @@
-import discord, asyncio, aiohttp, os
+import discord, asyncio, aiohttp, os, json
 from music import Music
 from discord.ext import commands
 from utils import *
 
 MOTD_TEXT = "2 + 2 is 4. Minus 1 that's 3, quick maffs."
-if not discord.opus.is_loaded():
-	discord.opus.load_opus('opus')
-
 bot = commands.Bot(command_prefix=commands.when_mentioned_or('!'))
-bot.add_cog(Music(bot))
 server = None
 user_agent = get_user_agent()
 loop = asyncio.get_event_loop()  
@@ -42,6 +38,18 @@ async def on_message(message):
 		return
 	print(message.author, "-", message.content)
 
+def load_environment(environment_path='environment.json'):
+	with open(environment_path, 'r') as environment:
+		env = json.loads(environment.read())
+		for key, value in env.items():
+			os.environ[key] = value
+			print(os.environ[key])
+
+
 if __name__ == "__main__":
+	if not discord.opus.is_loaded():
+		discord.opus.load_opus('opus')
+	load_environment()
+	bot.add_cog(Music(bot))
 	client.loop.create_task(my_background_task())
 	bot.run(os.environ['DISCORD_BOT_TOKEN']) #NOT MINE
