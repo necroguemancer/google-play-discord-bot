@@ -1,32 +1,23 @@
 import discord, asyncio, requests, aiohttp, html, json, random, sys, os
 from discord.ext import commands
-# from oauth2client.client import 
 from gmusicapi import Mobileclient
 from voice_state import VoiceState
 from voice_entry import VoiceEntry
+from permissions import Permissions
 from bs4 import BeautifulSoup
 import urllib.request as request
 
 VOLUME_LEVEL = .1
 
 class Music:
+
 	def __init__(self, bot):
 		self.bot = bot
 		self.voice_states = {}
 		self.api = Mobileclient()
 		self.logged_in = self.api.oauth_login(os.environ['HARDWARE_ID'], "{}{}".format(os.environ['CREDENTIALS_FILE_DIR'], os.environ['CREDENTIALS_FILE_NAME']))
+		self.permissions = Permissions(os.environ['DEFAULT_ADMIN'])
 		self.VOLUME_LEVEL = .1
-
-	def get_permissions(self):
-		permissions = ""
-		try:
-			with open("permissions.txt", "r") as f:
-				permissions = f.read()
-		except Exception as e:
-			with open("permissions.txt", "a") as f:
-				f.write("")
-
-		return permissions
 
 	def get_voice_state(self, server):
 		state = self.voice_states.get(server.id)
@@ -37,13 +28,9 @@ class Music:
 		return state
 
 	def check(self, ctx):
-		command_text = "!{0}:{1}".format(ctx.command, ctx.message.author.mention)
-
-		if command_text not in self.get_permissions():
-			print(command_text, "doesn't have access.")
-			self.bot.say('You do not have permissions for this command.')
-			return False
-		return True
+		if self.permissions.check_permission(self.permissions.admin_perm, ctx.message.author.id):
+			return True
+		return self.permissions.check_permission(ctx.command, ctx.message.author.id)
 
 	async def create_voice_client(self, channel):
 		voice = await self.bot.join_voice_channel(channel)
@@ -76,8 +63,8 @@ class Music:
 			await self.bot.say("You don't have access to that command.")
 			return
 		"""Summons the bot to join your voice channel."""
-		summoned_channel = ctx.message.author.voice_channel
 
+		summoned_channel = ctx.message.author.voice_channel
 		if summoned_channel is None:
 			await self.bot.say('You are not in a voice channel.')
 			return False
@@ -268,28 +255,16 @@ class Music:
 			skip_count = len(state.skip_votes)
 			await self.bot.say('Now playing {} [skips: {}/3]'.format(state.current, skip_count))
 
-	# @commands.command(pass_context=True, no_pm=True)
-	# async def test(self, ctx):
-	# 	em = discord.Embed(title='My Embed Title', description='My Embed Content.', colour=0xDEADBF)
-	# 	em.set_author(name='Someone', icon_url=bot.user.default_avatar_url)
-	# 	await self.bot.say("test", embed=em)
+	@commands.command(pass_context=True)
+	async def grant(self, ctx, permission, requesting_user):
+		try:
+			self.permissions.grant_permission(permission, ctx.message.author.id, requesting_user)
+		except PermissionError as pe:
+			await self.bot.say(pe)
 
 	@commands.command(pass_context=True)
-	async def grant(self, ctx, user, command):
-		if not self.check(ctx): 
-			await self.bot.say("You don't have access to that command.")
-			return
-		permissions = self.get_permissions()
-		commands = command.split("+")
-		for command in commands:
-			to_file_text = "!{0}:{1}".format(command, user)
-
-			if to_file_text in permissions:
-				permissions = permissions.replace(to_file_text + "\n", "")
-				with open("permissions.txt", "w") as f:
-					f.write(permissions)
-				await self.bot.say("Removed {} access to !{}".format(user, command))
-			else:
-				with open("permissions.txt", "a") as f:
-					f.write(to_file_text + "\n")
-				await self.bot.say("Granted {} access to !{}".format(user, command))
+	async def revoke(self, ctx, permission, requesting_user):
+		try:
+			self.permissions.remove_permission(permission, ctx.message.author.id, requesting_user)
+		except PermissionError as pe:
+			await self.bot.say(pe)
