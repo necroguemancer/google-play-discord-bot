@@ -45,7 +45,7 @@ pip install Faker
 
 ### TODOS:
 
-* [ ] Create makefile for fast bootstrapping
+* [x] Create makefile for fast bootstrapping
 * [ ] Terraform for rapid AWS deployment
 * [ ] Working permissions system with command integration
 * [ ] Make sure it cleans up after itself when streaming music
