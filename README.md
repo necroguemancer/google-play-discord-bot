@@ -49,6 +49,7 @@ pip install Faker
 * [ ] Terraform for rapid AWS deployment
 * [x] Working permissions system with command integration
 * [ ] Make sure it cleans up after itself when streaming music
+* [ ] Max queue size for songs
 * [x] Create music folder if it doesn't exist so it works when it doesn't
 * [ ] Pray that unittesting is in good shape (it's not) and fix what isn't
 * [ ] Make it not look like a comment bomb hit it
