@@ -34,20 +34,16 @@ class VoiceState:
 		try:
 			song_info = str(self.current).split(' - ')
 			mp3_file = "./music/{}_{}.mp3".format(song_info[0], song_info[1])
-			print("Attempting to delete: " + mp3_file)
 			if os.path.isfile(mp3_file):
 				os.remove(mp3_file)
 		except FileNotFoundError:
-			print("Couldn't find the file to delete.")
+			print("Couldn't find the mp3 file to delete.")
 
 	async def audio_player_task(self):
 		while True:
-			print("Clearing the song: " + str(self.current))
 			self.play_next_song.clear()
-			print("Starting the next song: " + str(self.current))
 			self.current = await self.songs.get()
 			await self.bot.send_message(self.current.channel, 'Now playing ' + str(self.current))
 			self.current.player.start()
-			print("Started the current song: " + str(self.current))
 			await self.play_next_song.wait()
 			await self.clean_song()

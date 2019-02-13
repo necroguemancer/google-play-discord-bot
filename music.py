@@ -68,6 +68,7 @@ class Music:
 		return found_songs
 
 	async def song_download(self, artist, title, track_url):
+		await self.bot.say("Downloading {}'s {}.mp3".format(artist, title))
 		track_raw = request.urlopen(track_url)
 		if "./music/{}_{}.mp3".format(artist, title) not in glob.glob("./music/*.mp3"):
 			await self.bot.say("Downloading {}'s {}.mp3".format(artist, title))
